@@ -190,7 +190,33 @@ public class thuoc_DAO {
                            "WHERE toLower(t.tenThuoc) CONTAINS toLower($ten) AND toLower(k.loaiKe) CONTAINS toLower($loai) " +
                            "AND toLower(ncc.tenNhaCungCap) CONTAINS toLower($ncc) " +
                            "RETURN t, k, ncc";
-            Result result = session.run(query, Values.parameters("ten", ten, "loai", loai, "ncc", ncc));
+            Result result = session.run(query, Values.parameters(
+                "ten", ten == null ? "" : ten,
+                "loai", loai == null ? "" : loai,
+                "ncc", ncc == null ? "" : ncc
+            ));
+            while (result.hasNext()) {
+                ds.add(mapRecordToThuoc(result.next()));
+            }
+        }
+        return ds;
+    }
+
+    public List<Thuoc> searchThuocForSale(String ma, String ten, String loai) {
+        List<Thuoc> ds = new ArrayList<>();
+        try (Session session = driver.session()) {
+            String query = "MATCH (t:Thuoc)-[:THUOC_TAI]->(k:KeThuoc), " +
+                           "(t)-[:CUNG_CAP_BOI]->(ncc:NhaCungCap) " +
+                           "WHERE toLower(t.maThuoc) CONTAINS toLower($ma) " +
+                           "AND toLower(t.tenThuoc) CONTAINS toLower($ten) " +
+                           "AND toLower(k.loaiKe) CONTAINS toLower($loai) " +
+                           "AND t.trangThai = 'Đang kinh doanh' " +
+                           "RETURN t, k, ncc";
+            Result result = session.run(query, Values.parameters(
+                "ma", ma == null ? "" : ma,
+                "ten", ten == null ? "" : ten,
+                "loai", loai == null ? "" : loai
+            ));
             while (result.hasNext()) {
                 ds.add(mapRecordToThuoc(result.next()));
             }

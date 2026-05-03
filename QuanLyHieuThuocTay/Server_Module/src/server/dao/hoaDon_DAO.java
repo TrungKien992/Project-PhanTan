@@ -39,7 +39,7 @@ public class hoaDon_DAO {
                            "WITH h " +
                            "UNWIND $details as d " +
                            "MATCH (t:Thuoc {maThuoc: d.maThuoc}) " +
-                           "CREATE (h)-[:CHI_TIET_HOA_DON {soLuong: d.soLuong, donGia: d.donGia}]->(t) " +
+                           "CREATE (h)-[:HAS_DETAIL {soLuong: d.soLuong, donGia: d.donGia}]->(t) " +
                            "RETURN h";
             
             double tongCong = hd.getDanhSachChiTiet().stream().mapToDouble(d -> d.getSoLuong() * d.getDonGia()).sum();
@@ -98,24 +98,32 @@ public class hoaDon_DAO {
         hd.setTongCong(nodeH.get("tongCong").asDouble());
 
         NhanVien nv = new NhanVien();
-        nv.setMaNV(record.get("nv").asNode().get("maNV").asString());
+        var nodeNv = record.get("nv").asNode();
+        nv.setMaNV(nodeNv.get("maNV").asString());
+        nv.setTenNV(nodeNv.get("tenNV").isNull() ? "" : nodeNv.get("tenNV").asString());
         hd.setNhanVien(nv);
 
         if (!record.get("th").isNull()) {
             Thue th = new Thue();
-            th.setMaThue(record.get("th").asNode().get("maThue").asString());
+            var nodeTh = record.get("th").asNode();
+            th.setMaThue(nodeTh.get("maThue").asString());
+            th.setTiLe(nodeTh.get("tiLe").isNull() ? 0.0 : nodeTh.get("tiLe").asDouble());
             hd.setThue(th);
         }
 
         if (!record.get("kh").isNull()) {
             KhachHang kh = new KhachHang();
-            kh.setMaKH(record.get("kh").asNode().get("maKH").asString());
+            var nodeKh = record.get("kh").asNode();
+            kh.setMaKH(nodeKh.get("maKH").asString());
+            kh.setTenKH(nodeKh.get("tenKH").isNull() ? "" : nodeKh.get("tenKH").asString());
             hd.setKhachHang(kh);
         }
 
         if (!record.get("km").isNull()) {
             KhuyenMai km = new KhuyenMai();
-            km.setMaKM(record.get("km").asNode().get("maKM").asString());
+            var nodeKm = record.get("km").asNode();
+            km.setMaKM(nodeKm.get("maKM").asString());
+            km.setGiaTri(nodeKm.get("giaTri").isNull() ? 0.0 : nodeKm.get("giaTri").asDouble());
             hd.setKhuyenMai(km);
         }
 
@@ -125,7 +133,7 @@ public class hoaDon_DAO {
     public List<ChiTietHoaDon> getChiTietHoaDonTheoMa(String maHD) {
         List<ChiTietHoaDon> ds = new ArrayList<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (h:HoaDon {maHD: $ma})-[r:CHI_TIET_HOA_DON]->(t:Thuoc) " +
+            String query = "MATCH (h:HoaDon {maHD: $ma})-[r:HAS_DETAIL]->(t:Thuoc) " +
                            "RETURN r.soLuong as soLuong, r.donGia as donGia, t.maThuoc as maThuoc, t.tenThuoc as tenThuoc";
             Result result = session.run(query, Values.parameters("ma", maHD));
             while (result.hasNext()) {
@@ -202,17 +210,25 @@ public class hoaDon_DAO {
     public List<Object[]> searchHoaDonChiTiet(String maHD, String tenKH, String sdtKH, String tenNV, String sdtNV, String ngayLap) {
         List<Object[]> ds = new ArrayList<>();
         try (Session session = driver.session()) {
-            StringBuilder query = new StringBuilder("MATCH (hd:HoaDon)-[:LAP_BOI]->(nv:NhanVien) OPTIONAL MATCH (hd)-[:MUA_BOI]->(kh:KhachHang) WHERE 1=1 ");
-            Map<String, Object> params = new HashMap<>();
-            if (maHD != null && !maHD.isEmpty()) { query.append("AND toLower(hd.maHD) CONTAINS toLower($ma) "); params.put("ma", maHD); }
-            if (tenKH != null && !tenKH.isEmpty()) { query.append("AND toLower(kh.tenKH) CONTAINS toLower($tenKH) "); params.put("tenKH", tenKH); }
-            if (sdtKH != null && !sdtKH.isEmpty()) { query.append("AND toLower(kh.soDienThoai) CONTAINS toLower($sdtKH) "); params.put("sdtKH", sdtKH); }
-            if (tenNV != null && !tenNV.isEmpty()) { query.append("AND toLower(nv.tenNV) CONTAINS toLower($tenNV) "); params.put("tenNV", tenNV); }
-            if (sdtNV != null && !sdtNV.isEmpty()) { query.append("AND toLower(nv.soDienThoai) CONTAINS toLower($sdtNV) "); params.put("sdtNV", sdtNV); }
-            if (ngayLap != null && !ngayLap.isEmpty()) { query.append("AND hd.ngayLap = $ngay "); params.put("ngay", ngayLap); }
-            query.append("RETURN hd.maHD, kh.maKH, hd.ngayLap, kh.tenKH, kh.soDienThoai, nv.tenNV, nv.soDienThoai, hd.tongCong");
+            String query = "MATCH (hd:HoaDon)-[:LAP_BOI]->(nv:NhanVien) " +
+                           "OPTIONAL MATCH (hd)-[:MUA_BOI]->(kh:KhachHang) " +
+                           "WITH hd, nv, kh " +
+                           "WHERE toLower(hd.maHD) CONTAINS toLower($maHD) " +
+                           "AND toLower(coalesce(kh.tenKH, '')) CONTAINS toLower($tenKH) " +
+                           "AND toLower(coalesce(kh.soDienThoai, '')) CONTAINS toLower($sdtKH) " +
+                           "AND toLower(nv.tenNV) CONTAINS toLower($tenNV) " +
+                           "AND toLower(nv.soDienThoai) CONTAINS toLower($sdtNV) " +
+                           "AND ($ngayLap = '' OR hd.ngayLap = $ngayLap) " +
+                           "RETURN hd.maHD, kh.maKH, hd.ngayLap, kh.tenKH, kh.soDienThoai, nv.tenNV, nv.soDienThoai, hd.tongCong";
             
-            Result result = session.run(query.toString(), Values.parameters(params));
+            Result result = session.run(query, Values.parameters(
+                "maHD", maHD == null ? "" : maHD,
+                "tenKH", tenKH == null ? "" : tenKH,
+                "sdtKH", sdtKH == null ? "" : sdtKH,
+                "tenNV", tenNV == null ? "" : tenNV,
+                "sdtNV", sdtNV == null ? "" : sdtNV,
+                "ngayLap", ngayLap == null ? "" : ngayLap
+            ));
             while (result.hasNext()) {
                 Record rec = result.next();
                 ds.add(new Object[]{
@@ -275,7 +291,7 @@ public class hoaDon_DAO {
     public List<Thuoc> getDSThuocTheoHoaDon(String maHD) {
         List<Thuoc> ds = new ArrayList<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (hd:HoaDon {maHD: $ma})-[r:CHI_TIET_HOA_DON]->(t:Thuoc) " +
+            String query = "MATCH (hd:HoaDon {maHD: $ma})-[r:HAS_DETAIL]->(t:Thuoc) " +
                            "RETURN t.maThuoc, t.tenThuoc, r.soLuong, r.donGia, t.donViTinh";
             Result result = session.run(query, Values.parameters("ma", maHD));
             while (result.hasNext()) {
