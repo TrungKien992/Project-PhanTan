@@ -62,9 +62,41 @@ public class ThemKH_Controller implements ActionListener {
 
         if (!validData(tenKH, sdt, diaChi)) return;
 
-        if (SocketClient.sendRequest(new Request(ActionType.GET_KHACH_HANG_BY_SDT, sdt)).getData() != null) {
-            JOptionPane.showMessageDialog(null, "Số điện thoại này đã tồn tại!");
-            return;
+        KhachHang existingKH = (KhachHang) SocketClient.sendRequest(new Request(ActionType.GET_KHACH_HANG_BY_SDT, sdt)).getData();
+        if (existingKH != null) {
+            if (existingKH.isTrangThai()) {
+                JOptionPane.showMessageDialog(null, "Số điện thoại này đã tồn tại trong hệ thống!");
+                return;
+            } else {
+                int confirmReactivate = JOptionPane.showConfirmDialog(null,
+                        "Khách hàng này đã có trong hệ thống và đang ngưng giao dịch.\nBạn có muốn kích hoạt lại trạng thái của khách hàng này không?",
+                        "Xác nhận kích hoạt lại", JOptionPane.YES_NO_OPTION);
+                
+                if (confirmReactivate == JOptionPane.YES_OPTION) {
+                    existingKH.setTrangThai(true);
+                    // Cập nhật lại thông tin nếu khách hàng có thay đổi (tên, địa chỉ)
+                    existingKH.setTenKH(tenKH);
+                    existingKH.setDiaChi(diaChi);
+                    
+                    boolean reactivated = (boolean) SocketClient.sendRequest(new Request(ActionType.UPDATE_KHACH_HANG, existingKH)).getData();
+                    if (reactivated) {
+                        JOptionPane.showMessageDialog(null, "Kích hoạt lại khách hàng thành công!");
+                        if (trangChuGUI != null) {
+                            trangChuGUI.loadDataTableKH();
+                            if (trangChuGUI.hoaDonController != null) {
+                                trangChuGUI.hoaDonController.loadCustomerPhonesToComboBox();
+                            }
+                        }
+                        themKHGUI.dispose();
+                        return;
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Kích hoạt lại thất bại!");
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
         }
 
         int confirm = JOptionPane.showConfirmDialog(null,

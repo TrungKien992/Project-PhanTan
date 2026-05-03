@@ -383,24 +383,29 @@ public class HoaDon_Controller {
             return;
         }
         KhachHang kh = (KhachHang) SocketClient.sendRequest(new Request(ActionType.GET_KHACH_HANG_BY_SDT, sdt)).getData();
-        if (kh != null) {
+        if (kh != null && kh.isTrangThai()) {
             view.lbl_Hientenkh.setText(kh.getTenKH());
             this.currentKhachHang = kh;
         } else { 
             List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{"", "", sdt, ""})).getData(); 
-            if (dsKH.size() == 1) { 
-                kh = dsKH.get(0);
-                view.lbl_Hientenkh.setText(kh.getTenKH());
+            KhachHang foundActive = null;
+            if (dsKH != null) {
+                for (KhachHang k : dsKH) {
+                    if (k.isTrangThai()) {
+                        foundActive = k;
+                        break;
+                    }
+                }
+            }
+            
+            if (foundActive != null) { 
+                view.lbl_Hientenkh.setText(foundActive.getTenKH());
                  if (editorComponent instanceof JTextField) {
-                     ((JTextField) editorComponent).setText(kh.getSoDienThoai());
+                     ((JTextField) editorComponent).setText(foundActive.getSoDienThoai());
                  } else {
-                     view.cb_Nhapsosdtkh.setSelectedItem(kh.getSoDienThoai()); 
+                     view.cb_Nhapsosdtkh.setSelectedItem(foundActive.getSoDienThoai()); 
                  }
-                this.currentKhachHang = kh;
-            } else if (dsKH.size() > 1) { 
-               
-                view.lbl_Hientenkh.setText("Khách vãng lai");
-                this.currentKhachHang = null;
+                this.currentKhachHang = foundActive;
             } else { 
                 view.lbl_Hientenkh.setText("Khách vãng lai"); 
                 this.currentKhachHang = null;
@@ -892,7 +897,7 @@ public class HoaDon_Controller {
         dialog.setVisible(true);
     }
     public void loadCustomerPhonesToComboBox() {
-        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_KHACH_HANG, null)).getData(); 
+        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_ACTIVE_KHACH_HANG, null)).getData(); 
 
         DefaultComboBoxModel<String> phoneModel = new DefaultComboBoxModel<>();
 

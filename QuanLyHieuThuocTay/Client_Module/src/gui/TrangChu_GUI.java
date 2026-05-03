@@ -128,6 +128,8 @@ public class TrangChu_GUI extends JFrame {
     public JTable table_CNNV;
     public JTextField txt_kh_dc;
     public JTextField txt_cnkh_dc;
+    public JComboBox<String> cb_kh_TrangThai;
+    public JComboBox<String> cb_cnkh_TrangThai;
     public JTable table_ThemNCC;
     public JTextField txtMaNCC_CNNCC;
     public JTextField txtTenNCC_CNNCC;
@@ -1318,6 +1320,17 @@ public class TrangChu_GUI extends JFrame {
         txt_kh_SDT.setBounds(325, 86, 471, 32); 
         pnl_KH_north.add(txt_kh_SDT);
 
+        JLabel lbl_kh_TrangThai = new JLabel("Trạng thái :");
+        lbl_kh_TrangThai.setFont(FONT_LABEL_BOLD);
+        lbl_kh_TrangThai.setForeground(COLOR_TEXT_DARK);
+        lbl_kh_TrangThai.setBounds(167, 134, 148, 30);
+        pnl_KH_north.add(lbl_kh_TrangThai);
+
+        cb_kh_TrangThai = new JComboBox<>(new String[] {"Tất cả", "Còn giao dịch", "Ngưng giao dịch"});
+        cb_kh_TrangThai.setFont(FONT_TEXT_FIELD);
+        cb_kh_TrangThai.setBounds(325, 134, 471, 32);
+        pnl_KH_north.add(cb_kh_TrangThai);
+
         JLabel lbl_kh_TenKH = new JLabel("Tên khách hàng :");
         lbl_kh_TenKH.setFont(FONT_LABEL_BOLD); 
         lbl_kh_TenKH.setForeground(COLOR_TEXT_DARK); 
@@ -1371,7 +1384,7 @@ public class TrangChu_GUI extends JFrame {
         	new Object[][] {
         	},
         	new String[] {
-        		"M\u00E3 kh\u00E1ch h\u00E0ng", "T\u00EAn kh\u00E1ch h\u00E0ng", "\u0110\u1ECBa ch\u1EC9", "S\u1ED1 \u0111i\u1EC7n tho\u1EA1i"
+        		"Mã khách hàng", "Tên khách hàng", "Địa chỉ", "Số điện thoại", "Trạng thái"
         	}
         ));
         table_tkkh.getColumnModel().getColumn(0).setPreferredWidth(99);
@@ -1428,6 +1441,17 @@ public class TrangChu_GUI extends JFrame {
         txt_cnkh_SDt.setColumns(10);
         txt_cnkh_SDt.setBounds(354, 90, 301, 33);
         pnlNorth.add(txt_cnkh_SDt);
+
+        JLabel lblTrangThai_CN = new JLabel("Trạng thái :");
+        lblTrangThai_CN.setFont(FONT_LABEL_BOLD);
+        lblTrangThai_CN.setForeground(COLOR_TEXT_DARK);
+        lblTrangThai_CN.setBounds(192, 140, 141, 30);
+        pnlNorth.add(lblTrangThai_CN);
+
+        cb_cnkh_TrangThai = new JComboBox<>(new String[] {"Còn giao dịch", "Ngưng giao dịch"});
+        cb_cnkh_TrangThai.setFont(FONT_TEXT_FIELD);
+        cb_cnkh_TrangThai.setBounds(354, 140, 301, 33);
+        pnlNorth.add(cb_cnkh_TrangThai);
 
         JLabel lblTenKh = new JLabel("Tên khách hàng :");
         lblTenKh.setFont(FONT_LABEL_BOLD);
@@ -1538,7 +1562,7 @@ public class TrangChu_GUI extends JFrame {
         	new Object[][] {
         	},
         	new String[] {
-        		"M\u00E3 kh\u00E1ch h\u00E0ng", "T\u00EAn Kh\u00E1ch h\u00E0ng", "\u0110\u1ECBa ch\u1EC9", "S\u1ED1 \u0111i\u1EC7n tho\u1EA1i"
+        		"Mã khách hàng", "Tên Khách hàng", "Địa chỉ", "Số điện thoại", "Trạng thái"
         	}
         ));
         scrollPane_CapNhatKH.setViewportView(table_CapNhatKH);
@@ -7518,28 +7542,24 @@ public class TrangChu_GUI extends JFrame {
         List<KhachHang> list = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_KHACH_HANG, null)).getData();
 
         DefaultTableModel model = (DefaultTableModel) table_CapNhatKH.getModel();
-        model.setRowCount(0); // Xóa bảng 1
+        model.setRowCount(0); 
 
         DefaultTableModel model_TK = (DefaultTableModel) table_tkkh.getModel();
-        model_TK.setRowCount(0); // <<< SỬA Ở ĐÂY: Dùng đúng biến model_TK
+        model_TK.setRowCount(0); 
 
-        // Thêm dữ liệu vào bảng 1 (model)
-        for (KhachHang kh : list) {
-            model.addRow(new Object[]{
-                kh.getMaKH(),
-                kh.getTenKH(),
-                kh.getDiaChi(),     // Đảm bảo thứ tự đúng: Địa chỉ
-                kh.getSoDienThoai() // Rồi đến SĐT
-            });
-        }
-        // Thêm dữ liệu vào bảng 2 (model_TK)
-        for (KhachHang kh : list) {
-            model_TK.addRow(new Object[]{
-                kh.getMaKH(),
-                kh.getTenKH(),
-                kh.getDiaChi(),     // Đảm bảo thứ tự đúng: Địa chỉ
-                kh.getSoDienThoai() // Rồi đến SĐT
-            });
+        if (list != null) {
+            for (KhachHang kh : list) {
+                String status = kh.isTrangThai() ? "Còn giao dịch" : "Ngưng giao dịch";
+                Object[] row = new Object[]{
+                    kh.getMaKH(),
+                    kh.getTenKH(),
+                    kh.getDiaChi(),
+                    kh.getSoDienThoai(),
+                    status
+                };
+                model.addRow(row);
+                model_TK.addRow(row);
+            }
         }
     }
 

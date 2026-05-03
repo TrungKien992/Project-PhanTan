@@ -135,9 +135,11 @@ public class ClientHandler implements Runnable {
                     return new Response("OK", khachHangDao.getKhachHangTheoSDT((String) data));
                 case SEARCH_KHACH_HANG:
                     Object[] khParams = (Object[]) data;
-                    return new Response("OK", khachHangDao.searchKhachHang((String)khParams[0], (String)khParams[1], (String)khParams[2], (String)khParams[3]));
+                    return new Response("OK", khachHangDao.searchKhachHang((String)khParams[0], (String)khParams[1], (String)khParams[2], (String)khParams[3], (Boolean)khParams[4]));
                 case GET_ALL_KHACH_HANG:
                     return new Response("OK", khachHangDao.getAllKhachHang());
+                case GET_ALL_ACTIVE_KHACH_HANG:
+                    return new Response("OK", khachHangDao.getAllActiveKhachHang());
                 case ADD_KHACH_HANG:
                     return new Response("OK", khachHangDao.themKhachHang((KhachHang) data));
                 case UPDATE_KHACH_HANG:

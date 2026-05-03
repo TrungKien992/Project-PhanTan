@@ -89,9 +89,13 @@ public class KhachHang_Controller implements ActionListener {
         trangChuGUI.txt_kh_dc.addKeyListener(new KeyAdapter() {
         	@Override
             public void keyReleased(KeyEvent e) {
-        		timKiemKhachHang_TK(); // Đã sửa đổi để chỉ tìm KH Active
+        		timKiemKhachHang_TK(); 
             }
 		});
+
+        // Thêm sự kiện cho ComboBox trạng thái (Chỉ cho Tab Tìm kiếm)
+        trangChuGUI.cb_kh_TrangThai.addActionListener(e -> timKiemKhachHang_TK());
+        // REMOVED: trangChuGUI.cb_cnkh_TrangThai listener to avoid selection loss loop
     }
 
 
@@ -108,8 +112,8 @@ public class KhachHang_Controller implements ActionListener {
         modelCN.setRowCount(0);
         modelTK.setRowCount(0);
         for (KhachHang kh : dsKH) {
-            
-            Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai() };
+            String statusText = kh.isTrangThai() ? "Còn giao dịch" : "Ngưng giao dịch";
+            Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai(), statusText };
             modelCN.addRow(row);
             modelTK.addRow(row);
         }
@@ -131,8 +135,12 @@ public class KhachHang_Controller implements ActionListener {
             trangChuGUI.txt_cnkh_tenkh.setText(tenKH);
             trangChuGUI.txt_cnkh_dc.setText(diaChi); 
             trangChuGUI.txt_cnkh_SDt.setText(sdt);   
+            
+            // Cập nhật ComboBox Trạng thái
+            String trangThai = trangChuGUI.table_CapNhatKH.getValueAt(row, 4).toString();
+            trangChuGUI.cb_cnkh_TrangThai.setSelectedItem(trangThai);
 
-            // Lấy KhachHang đầy đủ từ DAO để lấy đúng trạng thái (mặc định là true nếu chưa cập nhật)
+            // Lấy KhachHang đầy đủ từ DAO
             khachHangGoc = (KhachHang) SocketClient.sendRequest(new Request(ActionType.GET_KHACH_HANG_BY_MA, maKH)).getData(); 
         }
     }
@@ -149,6 +157,7 @@ public class KhachHang_Controller implements ActionListener {
         trangChuGUI.txt_cnkh_tenkh.setText("");
         trangChuGUI.txt_cnkh_dc.setText("");
         trangChuGUI.txt_cnkh_SDt.setText("");
+        trangChuGUI.cb_cnkh_TrangThai.setSelectedIndex(0); 
         
         hienThiDanhSachKhachHang();
     }
@@ -159,6 +168,7 @@ public class KhachHang_Controller implements ActionListener {
         trangChuGUI.txt_kh_TenKH.setText("");
         trangChuGUI.txt_kh_SDT.setText("");
         trangChuGUI.txt_kh_dc.setText("");
+        trangChuGUI.cb_kh_TrangThai.setSelectedIndex(0);
         hienThiDanhSachKhachHang();
     }
 
@@ -175,6 +185,7 @@ public class KhachHang_Controller implements ActionListener {
         trangChuGUI.txt_cnkh_tenkh.setText(khachHangGoc.getTenKH());
         trangChuGUI.txt_cnkh_dc.setText(khachHangGoc.getDiaChi());
         trangChuGUI.txt_cnkh_SDt.setText(khachHangGoc.getSoDienThoai());
+        trangChuGUI.cb_cnkh_TrangThai.setSelectedItem(khachHangGoc.isTrangThai() ? "Còn giao dịch" : "Ngưng giao dịch");
     }
 
     /**
@@ -216,19 +227,23 @@ public class KhachHang_Controller implements ActionListener {
         String maTK = trangChuGUI.txtMKH_TK.getText().trim();
         String tenTK = trangChuGUI.txtTenKH_TK.getText().trim();
         
-        // Sử dụng hàm search đã được lọc trangThai=1 trong DAO
-        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{maTK, tenTK, "", ""})).getData(); 
+        String ttSelected = "Tất cả"; // Tab này không có combo box lọc, mặc định lấy tất cả hoặc bạn có thể thêm sau
+        
+        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{maTK, tenTK, "", "", null})).getData(); 
         
         DefaultTableModel model = (DefaultTableModel) trangChuGUI.table_CapNhatKH.getModel();
         model.setRowCount(0);
 
-        for (KhachHang kh : dsKH) {
-            Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai() };
-            model.addRow(row);
+        if (dsKH != null) {
+            for (KhachHang kh : dsKH) {
+                String statusText = kh.isTrangThai() ? "Còn giao dịch" : "Ngưng giao dịch";
+                Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai(), statusText };
+                model.addRow(row);
+            }
         }
-
+        
         if (maTK.isEmpty() && tenTK.isEmpty()) {
-            hienThiDanhSachKhachHang();
+            // Không cần làm gì thêm vì dsKH đã chứa toàn bộ nếu params rỗng
         }
     }
     
@@ -242,18 +257,25 @@ public class KhachHang_Controller implements ActionListener {
         String sdtTK = trangChuGUI.txt_kh_SDT.getText().trim();
         String dcTK = trangChuGUI.txt_kh_dc.getText().trim();
         
-        // Sử dụng hàm search đã được lọc trangThai=1 trong DAO
-        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{maTK, tenTK, sdtTK, dcTK})).getData(); 
+        // Lấy trạng thái từ combo box
+        String ttSelected = (String) trangChuGUI.cb_kh_TrangThai.getSelectedItem();
+        Boolean trangThaiFilter = null;
+        if ("Còn giao dịch".equals(ttSelected)) trangThaiFilter = true;
+        else if ("Ngưng giao dịch".equals(ttSelected)) trangThaiFilter = false;
+
+        List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{maTK, tenTK, sdtTK, dcTK, trangThaiFilter})).getData(); 
         
         DefaultTableModel model = (DefaultTableModel) trangChuGUI.table_tkkh.getModel();
         model.setRowCount(0);
 
         for (KhachHang kh : dsKH) {
-            Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai() };
+            String statusText = kh.isTrangThai() ? "Còn giao dịch" : "Ngưng giao dịch";
+            Object[] row = { kh.getMaKH(), kh.getTenKH(), kh.getDiaChi(), kh.getSoDienThoai(), statusText };
             model.addRow(row);
         }
 
-        if (maTK.isEmpty() && tenTK.isEmpty() && sdtTK.isEmpty() && dcTK.isEmpty()) {
+        if (maTK.isEmpty() && tenTK.isEmpty() && sdtTK.isEmpty() && dcTK.isEmpty() && "Tất cả".equals(ttSelected)) {
+            // Chỉ gọi hienThiDanhSachKhachHang khi thực sự không lọc gì
             hienThiDanhSachKhachHang();
         }
     }
@@ -280,13 +302,14 @@ public class KhachHang_Controller implements ActionListener {
             return;
         }
 
-        // Lấy thông tin gốc từ bảng (Nếu cần so sánh thì phải lấy từ bảng)
         String oldTen = trangChuGUI.table_CapNhatKH.getValueAt(row, 1).toString();
         String oldDiaChi = trangChuGUI.table_CapNhatKH.getValueAt(row, 2).toString();
         String oldSDT = trangChuGUI.table_CapNhatKH.getValueAt(row, 3).toString();
+        String oldTrangThai = trangChuGUI.table_CapNhatKH.getValueAt(row, 4).toString();
+        String newTrangThai = trangChuGUI.cb_cnkh_TrangThai.getSelectedItem().toString();
 
 
-        if (tenKH.equals(oldTen) && sdt.equals(oldSDT) && diaChi.equals(oldDiaChi)) {
+        if (tenKH.equals(oldTen) && sdt.equals(oldSDT) && diaChi.equals(oldDiaChi) && newTrangThai.equals(oldTrangThai)) {
             JOptionPane.showMessageDialog(null, "Không có thay đổi nào để cập nhật!");
             return;
         }
@@ -296,14 +319,8 @@ public class KhachHang_Controller implements ActionListener {
                 "Xác nhận cập nhật", JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            // Lấy trạng thái hiện tại từ khachHangGoc (đã được gán khi click chuột)
-            boolean currentTrangThai = true; 
-            if (khachHangGoc != null && khachHangGoc.getMaKH().equals(maKH)) {
-                 currentTrangThai = khachHangGoc.isTrangThai();
-            }
-            
-            // SỬ DỤNG CONSTRUCTOR ĐẦY ĐỦ THAM SỐ (ma, ten, sdt, diaChi, trangThai)
-            KhachHang kh = new KhachHang(maKH, tenKH, sdt, diaChi, currentTrangThai); 
+            boolean trangThaiUpdate = "Còn giao dịch".equals(newTrangThai);
+            KhachHang kh = new KhachHang(maKH, tenKH, sdt, diaChi, trangThaiUpdate); 
             boolean result = (boolean) SocketClient.sendRequest(new Request(ActionType.UPDATE_KHACH_HANG, kh)).getData();
 
             if (result) {
