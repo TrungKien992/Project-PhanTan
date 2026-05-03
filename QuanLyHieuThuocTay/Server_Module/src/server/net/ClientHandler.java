@@ -92,7 +92,7 @@ public class ClientHandler implements Runnable {
                     return new Response("OK", thuocDao.getAllTenThuoc());
                 case SEARCH_THUOC_FOR_SALE:
                     Object[] params = (Object[]) data;
-                    return new Response("OK", thuocDao.searchThuoc((String)params[0], (String)params[1], (String)params[2]));
+                    return new Response("OK", thuocDao.searchThuocForSale((String)params[0], (String)params[1], (String)params[2]));
                 case UPDATE_TRANG_THAI_THUOC:
                     Object[] ttParams = (Object[]) data;
                     return new Response("OK", thuocDao.updateTrangThai((String)ttParams[0], (String)ttParams[1]));

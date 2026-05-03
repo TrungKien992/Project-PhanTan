@@ -35,7 +35,7 @@ public class ThuocSapHetHan_Controller {
     
     public void exportToExcel(List<Thuoc> ds, String filePath) {
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Thuốc hết hạn / sắp hết hạn");
+            Sheet sheet = workbook.createSheet("Thuốc hết hạn - sắp hết hạn");
 
             String[] headers = {
                 "Mã Thuốc", "Tên Thuốc", "Số Lượng", "Giá Nhập", "Giá Bán", "Đơn Vị Tính",

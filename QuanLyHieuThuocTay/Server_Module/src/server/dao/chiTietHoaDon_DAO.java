@@ -19,7 +19,7 @@ public class chiTietHoaDon_DAO {
     public Map<String, Integer> getThongKeThuocBanChay() {
         Map<String, Integer> map = new HashMap<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (hd:HoaDon)-[r:CHI_TIET_HOA_DON]->(t:Thuoc) " +
+            String query = "MATCH (hd:HoaDon)-[r:HAS_DETAIL]->(t:Thuoc) " +
                            "RETURN t.maThuoc as ma, sum(r.soLuong) as total " +
                            "ORDER BY total DESC";
             Result result = session.run(query);
