@@ -39,7 +39,7 @@ public class hoaDon_DAO {
                            "WITH h " +
                            "UNWIND $details as d " +
                            "MATCH (t:Thuoc {maThuoc: d.maThuoc}) " +
-                           "CREATE (h)-[:HAS_DETAIL {soLuong: d.soLuong, donGia: d.donGia}]->(t) " +
+                           "CREATE (h)-[:CHI_TIET_HOA_DON {soLuong: d.soLuong, donGia: d.donGia}]->(t) " +
                            "RETURN h";
             
             double tongCong = hd.getDanhSachChiTiet().stream().mapToDouble(d -> d.getSoLuong() * d.getDonGia()).sum();
@@ -125,8 +125,8 @@ public class hoaDon_DAO {
     public List<ChiTietHoaDon> getChiTietHoaDonTheoMa(String maHD) {
         List<ChiTietHoaDon> ds = new ArrayList<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (h:HoaDon {maHD: $ma})-[r:HAS_DETAIL]->(t:Thuoc) " +
-                           "RETURN r.soLuong as soLuong, r.donGia as donGia, t.maThuoc as maThuoc";
+            String query = "MATCH (h:HoaDon {maHD: $ma})-[r:CHI_TIET_HOA_DON]->(t:Thuoc) " +
+                           "RETURN r.soLuong as soLuong, r.donGia as donGia, t.maThuoc as maThuoc, t.tenThuoc as tenThuoc";
             Result result = session.run(query, Values.parameters("ma", maHD));
             while (result.hasNext()) {
                 Record rec = result.next();
@@ -135,6 +135,8 @@ public class hoaDon_DAO {
                 ct.setDonGia(rec.get("donGia").asDouble());
                 Thuoc t = new Thuoc();
                 t.setMaThuoc(rec.get("maThuoc").asString());
+                t.setTenThuoc(rec.get("tenThuoc").asString());
+                t.setGiaBan(rec.get("donGia").asDouble()); // Lưu giá lúc bán vào entity Thuoc để hiển thị
                 ct.setThuoc(t);
                 ds.add(ct);
             }
@@ -273,7 +275,7 @@ public class hoaDon_DAO {
     public List<Thuoc> getDSThuocTheoHoaDon(String maHD) {
         List<Thuoc> ds = new ArrayList<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (hd:HoaDon {maHD: $ma})-[r:HAS_DETAIL]->(t:Thuoc) " +
+            String query = "MATCH (hd:HoaDon {maHD: $ma})-[r:CHI_TIET_HOA_DON]->(t:Thuoc) " +
                            "RETURN t.maThuoc, t.tenThuoc, r.soLuong, r.donGia, t.donViTinh";
             Result result = session.run(query, Values.parameters("ma", maHD));
             while (result.hasNext()) {

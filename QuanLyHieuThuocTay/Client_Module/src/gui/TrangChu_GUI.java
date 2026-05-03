@@ -3513,7 +3513,7 @@ public class TrangChu_GUI extends JFrame {
                                 .atZone(java.time.ZoneId.systemDefault())
                                 .toLocalDate();
                         
-                        // --- SỬA LỖI TẠI ĐÂY: Thêm tham số "Còn làm việc" vào Constructor ---
+                        // --- SỬA LỖI TẠI ĐÂY: Thêm tham số "Đang làm việc" vào Constructor ---
                         NhanVien nv = new NhanVien(
                             maNhanVienMoi,
                             ten,
@@ -3523,7 +3523,7 @@ public class TrangChu_GUI extends JFrame {
                             sdt,
                             tinh + ", " + huyen,
                             anh,
-                            "Còn làm việc", // <--- Đã thêm trạng thái
+                            "Đang làm việc", // <--- Đã thêm trạng thái
                             null // Tài khoản tạm thời null
                         );
 
@@ -3544,7 +3544,7 @@ public class TrangChu_GUI extends JFrame {
                             tinh + ", " + huyen, 
                             anh, 
                             tenTaiKhoanTuDong,
-                            "Còn làm việc" // Thêm hiển thị trạng thái lên bảng
+                            "Đang làm việc" // Thêm hiển thị trạng thái lên bảng
                         });
 
                         // 10. RESET FORM
@@ -3673,10 +3673,10 @@ public class TrangChu_GUI extends JFrame {
 
                                 // 4. LƯU TÀI KHOẢN -> LƯU NHÂN VIÊN
                                 if ((boolean) SocketClient.sendRequest(new Request(ActionType.ADD_TAI_KHOAN, tkMoi)).getData()) {
-                                    // --- SỬA LỖI TẠI ĐÂY: Thêm "Còn làm việc" vào Constructor ---
+                                    // --- SỬA LỖI TẠI ĐÂY: Thêm "Đang làm việc" vào Constructor ---
                                     NhanVien nv = new NhanVien(
                                         maNV, tenNV, ngaySinh, gioiTinh, cv, sdt, diaChi, anh, 
-                                        "Còn làm việc", // Trạng thái
+                                        "Đang làm việc", // Trạng thái
                                         tkMoi           // Tài khoản
                                     );
                                     
@@ -3967,7 +3967,7 @@ public class TrangChu_GUI extends JFrame {
                 cboTrangthai_TKNV.setFont(new Font("Segoe UI", Font.PLAIN, 15));
                 cboTrangthai_TKNV.setBounds(676, 90, 216, 33);
                 cboTrangthai_TKNV.addItem("Tất cả");
-                cboTrangthai_TKNV.addItem("Còn làm việc");
+                cboTrangthai_TKNV.addItem("Đang làm việc");
                 cboTrangthai_TKNV.addItem("Nghỉ việc");
                 pnlFilters_TKNV.add(cboTrangthai_TKNV);
                 panel_TimKiemNV.addComponentListener(new ComponentAdapter() {
@@ -4741,6 +4741,10 @@ public class TrangChu_GUI extends JFrame {
                             }
                             // ⚙️ Nếu có dấu ":" thì là đường dẫn tuyệt đối
                             else if (duongDanAnh.contains(":")) {
+                                imageFile = new File(duongDanAnh);
+                            }
+                            // ⚙️ Nếu đã chứa "img/" hoặc "img\" thì không nối thêm nữa
+                            else if (duongDanAnh.replace("\\", "/").startsWith("img/")) {
                                 imageFile = new File(duongDanAnh);
                             }
                             // ⚙️ Còn lại thì load từ thư mục img/ theo tên file
@@ -5757,7 +5761,7 @@ public class TrangChu_GUI extends JFrame {
         pnlChucNangQLTK.add(btnThemTK);
         pnlChucNangQLTK.add(btnCapNhatTK);
 
-        QuanLyTaiKhoanController qltkController = new QuanLyTaiKhoanController(pn_QuanLyTaiKhoan, tableQLTK);
+        QuanLyTaiKhoanController qltkController = new QuanLyTaiKhoanController(pn_QuanLyTaiKhoan, tableQLTK, this);
 
         btnThemTK.addActionListener(e -> qltkController.themTaiKhoan(QuanLyHieuThuocTay)); 
         btnCapNhatTK.addActionListener(e -> qltkController.capNhatTaiKhoan(QuanLyHieuThuocTay));
@@ -7571,6 +7575,12 @@ public class TrangChu_GUI extends JFrame {
         return button;
     }
     
+    public void refreshNhanVienTable() {
+        if (table_CNNV != null) {
+            loadDataToTableNV(table_CNNV);
+        }
+    }
+    
     private void loadDataToTableNV(JTable table) {
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0); 
@@ -7578,28 +7588,30 @@ public class TrangChu_GUI extends JFrame {
         List<NhanVien> dsNV = (List<NhanVien>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_NHAN_VIEN, null)).getData();
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        for (NhanVien nv : dsNV) {
-            // Kiểm tra null cho trạng thái để tránh lỗi
-            String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Còn làm việc";
-            
-            model.addRow(new Object[]{
-                nv.getMaNV(),
-                nv.getTenNV(),
-                nv.getNgaySinh().format(dtf), 
-                nv.getGioiTinh(),
-                nv.getChucVu().getTenChucVu(),
-                nv.getSoDienThoai(),
-                nv.getDiaChi(),
-                nv.getAnh(),
-                nv.getTaiKhoan().getTenTK(),
-                trangThai // <--- Đã thêm cột trạng thái vào đây
-            });
+        if (dsNV != null) {
+            for (NhanVien nv : dsNV) {
+                // Kiểm tra null cho trạng thái để tránh lỗi
+                String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Đang làm việc";
+                
+                model.addRow(new Object[]{
+                    nv.getMaNV(),
+                    nv.getTenNV(),
+                    nv.getNgaySinh() != null ? nv.getNgaySinh().format(dtf) : "", 
+                    nv.getGioiTinh(),
+                    nv.getChucVu() != null ? nv.getChucVu().getTenChucVu() : "",
+                    nv.getSoDienThoai(),
+                    nv.getDiaChi(),
+                    nv.getAnh(),
+                    nv.getTaiKhoan() != null ? nv.getTaiKhoan().getTenTK() : "",
+                    trangThai // <--- Đã thêm cột trạng thái vào đây
+                });
+            }
         }
         
         // Load danh sách tạm (khi vừa bấm Thêm nhưng chưa Lưu)
         if (tempListNV != null && !tempListNV.isEmpty()) {
             for (NhanVien nv : tempListNV) {
-                String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Còn làm việc";
+                String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Đang làm việc";
                 model.addRow(new Object[]{
                     nv.getMaNV(),
                     nv.getTenNV(),
@@ -7928,7 +7940,7 @@ public class TrangChu_GUI extends JFrame {
             boolean matchCV = maChucVu.isEmpty() || (nv.getChucVu() != null && nv.getChucVu().getMaChucVu().equals(maChucVu));
 
             if (matchTen && matchCV) {
-                String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Còn làm việc";
+                String trangThai = nv.getTrangThai() != null ? nv.getTrangThai() : "Đang làm việc";
                 
                 model.addRow(new Object[]{
                     nv.getMaNV(),

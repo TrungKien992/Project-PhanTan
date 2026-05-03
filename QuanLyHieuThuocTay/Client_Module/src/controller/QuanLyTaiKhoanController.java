@@ -7,6 +7,7 @@ import shared.net.ActionType;
 import entity.TaiKhoan;
 import gui.TaiKhoan_GUI;
 import gui.ThemNhanVienSauKhiTaoTK_GUI;
+import gui.TrangChu_GUI;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -19,10 +20,12 @@ import java.util.List;
 public class QuanLyTaiKhoanController {
     private JPanel view; 
     private JTable table;
+    private TrangChu_GUI trangChu;
 
-    public QuanLyTaiKhoanController(JPanel view, JTable table) {
+    public QuanLyTaiKhoanController(JPanel view, JTable table, TrangChu_GUI trangChu) {
         this.view = view;
         this.table = table;
+        this.trangChu = trangChu;
         loadData(); 
     }
 
@@ -66,6 +69,9 @@ public class QuanLyTaiKhoanController {
                 if ((boolean) SocketClient.sendRequest(new Request(ActionType.UPDATE_TAI_KHOAN, tkMoi)).getData()) {
                     JOptionPane.showMessageDialog(view, "Cập nhật thành công!");
                     loadData();
+                    if (trangChu != null) {
+                        trangChu.refreshNhanVienTable();
+                    }
                 } else {
                     JOptionPane.showMessageDialog(view, "Cập nhật thất bại!");
                 }

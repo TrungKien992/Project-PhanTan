@@ -760,12 +760,14 @@ public class Thuoc_Controller {
         // Dùng hàm search đã được lọc trạng thái
         List<Thuoc> dsThuoc = (List<Thuoc>) SocketClient.sendRequest(new Request(ActionType.SEARCH_THUOC, new Object[]{maTK, tenTK, keTK})).getData(); 
 
-        for (Thuoc t : dsThuoc) {
-            model.addRow(new Object[]{
-                    t.getMaThuoc(), t.getTenThuoc(), t.getSoLuong(), t.getGiaNhap(), t.getGiaBan(),
-                    t.getDonViTinh(), t.getNhaCungCap().getTenNhaCungCap(),
-                    t.getHanSuDung(), t.getKeThuoc().getLoaiKe(), t.getThanhPhan(), t.getAnh()
-            });
+        if (dsThuoc != null) {
+            for (Thuoc t : dsThuoc) {
+                model.addRow(new Object[]{
+                        t.getMaThuoc(), t.getTenThuoc(), t.getSoLuong(), t.getGiaNhap(), t.getGiaBan(),
+                        t.getDonViTinh(), t.getNhaCungCap().getTenNhaCungCap(),
+                        t.getHanSuDung(), t.getKeThuoc().getLoaiKe(), t.getThanhPhan(), t.getAnh()
+                });
+            }
         }
     }
 
@@ -837,13 +839,15 @@ public class Thuoc_Controller {
  // --- THÊM HÀM MỚI ĐỂ XỬ LÝ LOGIC LƯU DB VÀ ĐỌC FILE LẠI LẤY ẢNH ---
     private int luuThuocTuBangTam(File selectedFile, String filePath, DefaultTableModel modelTtf) throws Exception {
         int soThuocThem = 0;
-        // Refactored to use network calls
         
-        // === BỔ SUNG: KHỞI TẠO BỘ ĐẾM MÃ THUỐC TRƯỚC VÒNG LẶP ===
+        List<Thuoc> dsThuocHienCo = (List<Thuoc>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_THUOC, null)).getData();
+        List<NhaCungCap> allNcc = (List<NhaCungCap>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_NHA_CUNG_CAP, null)).getData();
+        List<KeThuoc> allKe = (List<KeThuoc>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_KE_THUOC, null)).getData();
+        
         String lastMa = (String) SocketClient.sendRequest(new Request(ActionType.GET_NEXT_MA_THUOC, null)).getData();
         int currentNumber = 0;
         if (lastMa != null && lastMa.startsWith("T")) {
-             currentNumber = Integer.parseInt(lastMa.substring(1)); // Bắt đầu từ mã tiếp theo (VD: 58)
+             currentNumber = Integer.parseInt(lastMa.substring(1));
         }
 
         try (FileInputStream fis = new FileInputStream(selectedFile)) {
@@ -855,10 +859,8 @@ public class Thuoc_Controller {
             }
             Sheet sheet = workbook.getSheetAt(0);
 
-         // Dùng modelTtf để lấy dữ liệu hiển thị (10 cột)
             for (int i = 0; i < modelTtf.getRowCount(); i++) {
                 
-                // Lấy dữ liệu từ bảng tạm theo chỉ mục hiển thị (0-9)
                 String tenThuoc = modelTtf.getValueAt(i, 1).toString();
                 String soluongStr = modelTtf.getValueAt(i, 2).toString();
                 String giaNhapStr = modelTtf.getValueAt(i, 3).toString();
@@ -870,42 +872,97 @@ public class Thuoc_Controller {
                 String tenKeThuoc = modelTtf.getValueAt(i, 8).toString();
                 String thanhPhan = modelTtf.getValueAt(i, 9).toString();
                 
-                // Lấy đường dẫn Ảnh từ file Excel gốc (dòng i+1 trong file)
                 Row rowExcel = sheet.getRow(i + 1); 
-                String anh = (rowExcel != null) ? getCellValue(rowExcel.getCell(7)) : ""; // Cell H (Index 7)
+                String anh = (rowExcel != null) ? getCellValue(rowExcel.getCell(7)) : "";
 
                 if (tenThuoc.isEmpty()) continue; 
 
-                // --- Chuyển đổi kiểu dữ liệu ---
                 int soLuong = Integer.parseInt(soluongStr);
                 double giaNhap = Double.parseDouble(giaNhapStr);
                 double giaBan = Double.parseDouble(giaBanStr);
                 LocalDate hanSD = LocalDate.parse(hanSDStr); 
 
-                // --- Logic nghiệp vụ (Tìm/Thêm NCC, Kệ) ---
-                NhaCungCap ncc = (NhaCungCap) SocketClient.sendRequest(new Request(ActionType.GET_NHA_CUNG_CAP_BY_TEN, tenNCC)).getData();
-                if (ncc == null) { /* ... (Thêm NCC) ... */ }
-                KeThuoc ke = (KeThuoc) SocketClient.sendRequest(new Request(ActionType.GET_KE_THUOC_BY_TEN, tenKeThuoc)).getData();
-                if (ke == null) { 
-                     // Nếu kệ không tồn tại, ném ngoại lệ để dừng
-                     throw new IllegalArgumentException("Kệ thuốc '" + tenKeThuoc + "' không tồn tại.");
+                NhaCungCap ncc = null;
+                String nccNorm = normalizeString(tenNCC);
+                if (allNcc != null) {
+                    for (NhaCungCap n : allNcc) {
+                        String dbNorm = normalizeString(n.getTenNhaCungCap());
+                        if (dbNorm.contains(nccNorm) || nccNorm.contains(dbNorm)) {
+                            ncc = n; break;
+                        }
+                    }
                 }
-                
-                // --- SINH MÃ THUỐC ---
-                String maThuoc = String.format("T%02d", currentNumber);
-                currentNumber++;
+                if (ncc == null) {
+                    ncc = (NhaCungCap) SocketClient.sendRequest(new Request(ActionType.GET_NHA_CUNG_CAP_BY_TEN, tenNCC)).getData();
+                }
 
-                Thuoc t = new Thuoc(
-                    maThuoc, tenThuoc, giaNhap, giaBan, soLuong, hanSD,
-                    thanhPhan, donViTinh, anh, ke, ncc, "Đang kinh doanh"
-                );
+                KeThuoc ke = null;
+                String keNorm = normalizeString(tenKeThuoc);
+                if (allKe != null) {
+                    for (KeThuoc k : allKe) {
+                        String dbNorm = normalizeString(k.getLoaiKe());
+                        if (dbNorm.contains(keNorm) || keNorm.contains(dbNorm)) {
+                            ke = k; break;
+                        }
+                    }
+                }
+                if (ke == null) {
+                    ke = (KeThuoc) SocketClient.sendRequest(new Request(ActionType.GET_KE_THUOC_BY_TEN, tenKeThuoc)).getData();
+                }
+                if (ke == null) { 
+                     throw new IllegalArgumentException("Kệ thuốc '" + tenKeThuoc + "' không tồn tại hoặc không thể ánh xạ. Vui lòng kiểm tra lại file Excel.");
+                }
 
-                boolean ok = (boolean) SocketClient.sendRequest(new Request(ActionType.ADD_THUOC, t)).getData();
-                if (ok) soThuocThem++;
+                Thuoc existingThuoc = null;
+                if (dsThuocHienCo != null) {
+                    for (Thuoc tEx : dsThuocHienCo) {
+                        if (normalizeString(tEx.getTenThuoc()).equalsIgnoreCase(normalizeString(tenThuoc))) {
+                            existingThuoc = tEx;
+                            break;
+                        }
+                    }
+                }
+
+                if (existingThuoc != null) {
+                    int newSoLuong = existingThuoc.getSoLuong() + soLuong;
+                    existingThuoc.setSoLuong(newSoLuong);
+                    boolean ok = (boolean) SocketClient.sendRequest(new Request(ActionType.UPDATE_THUOC, existingThuoc)).getData();
+                    if (ok) soThuocThem++;
+                } else {
+                    String maThuoc = String.format("T%02d", currentNumber);
+                    currentNumber++;
+
+                    Thuoc t = new Thuoc(
+                        maThuoc, tenThuoc, giaNhap, giaBan, soLuong, hanSD,
+                        thanhPhan, donViTinh, anh, ke, ncc, "Đang kinh doanh"
+                    );
+
+                    boolean ok = (boolean) SocketClient.sendRequest(new Request(ActionType.ADD_THUOC, t)).getData();
+                    if (ok) soThuocThem++;
+                }
             }
             workbook.close();
         }
 
         return soThuocThem;
+    }
+
+    private String normalizeString(String str) {
+        if (str == null) return "";
+        String temp = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        String normalized = pattern.matcher(temp).replaceAll("").toLowerCase();
+        normalized = normalized.replaceAll("đ", "d");
+        
+        normalized = normalized.replaceAll("công ty", "");
+        normalized = normalized.replaceAll("cong ty", "");
+        normalized = normalized.replaceAll("tnhh", "");
+        normalized = normalized.replaceAll("kệ", "");
+        normalized = normalized.replaceAll("ke ", "");
+        normalized = normalized.replaceAll("thuốc", "");
+        normalized = normalized.replaceAll("thuoc", "");
+        normalized = normalized.replaceAll("-", "");
+        normalized = normalized.replaceAll("\\s+", " ").trim();
+        return normalized;
     }
 }

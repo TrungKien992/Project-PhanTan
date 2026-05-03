@@ -32,19 +32,19 @@ CREATE (cv4:ChucVu {maChucVu: 'CV004', tenChucVu: 'Thủ kho', moTa: 'Quản lý
 // 2. TẠO NODE: TaiKhoan
 // ============================================================
 CREATE (tk1:TaiKhoan {maTK: 'TK001', tenTK: 'admin', matKhau: 'admin', quyenHan: 'Quản lý', trangThai: true});
-CREATE (tk2:TaiKhoan {maTK: 'TK002', tenTK: 'nhanvien1', matKhau: '123456', quyenHan: 'NhanVien', trangThai: true});
-CREATE (tk3:TaiKhoan {maTK: 'TK003', tenTK: 'nhanvien2', matKhau: '123456', quyenHan: 'NhanVien', trangThai: true});
-CREATE (tk4:TaiKhoan {maTK: 'TK004', tenTK: 'duocsi1', matKhau: '123456', quyenHan: 'NhanVien', trangThai: true});
-CREATE (tk5:TaiKhoan {maTK: 'TK005', tenTK: 'thukho1', matKhau: '123456', quyenHan: 'NhanVien', trangThai: true});
+CREATE (tk2:TaiKhoan {maTK: 'TK002', tenTK: 'nhanvien1', matKhau: '123456', quyenHan: 'Nhân viên bán hàng', trangThai: true});
+CREATE (tk3:TaiKhoan {maTK: 'TK003', tenTK: 'nhanvien2', matKhau: '123456', quyenHan: 'Nhân viên bán hàng', trangThai: true});
+CREATE (tk4:TaiKhoan {maTK: 'TK004', tenTK: 'duocsi1', matKhau: '123456', quyenHan: 'Nhân viên bán hàng', trangThai: true});
+CREATE (tk5:TaiKhoan {maTK: 'TK005', tenTK: 'thukho1', matKhau: '123456', quyenHan: 'Nhân viên bán hàng', trangThai: true});
 
 // ============================================================
 // 3. TẠO NODE: NhanVien + RELATIONSHIPS
 // ============================================================
-CREATE (nv1:NhanVien {maNV: 'NV001', tenNV: 'Nguyễn Văn An', ngaySinh: '1985-03-15', gioiTinh: 'Nam', soDienThoai: '0901234567', diaChi: '123 Nguyễn Trãi, Q.5, TP.HCM', anh: '', trangThai: 'Đang làm việc'});
-CREATE (nv2:NhanVien {maNV: 'NV002', tenNV: 'Trần Thị Bình', ngaySinh: '1995-07-22', gioiTinh: 'Nữ', soDienThoai: '0912345678', diaChi: '45 Lê Lợi, Q.1, TP.HCM', anh: '', trangThai: 'Đang làm việc'});
-CREATE (nv3:NhanVien {maNV: 'NV003', tenNV: 'Lê Hoàng Cường', ngaySinh: '1992-11-08', gioiTinh: 'Nam', soDienThoai: '0923456789', diaChi: '78 Trần Hưng Đạo, Q.5, TP.HCM', anh: '', trangThai: 'Đang làm việc'});
-CREATE (nv4:NhanVien {maNV: 'NV004', tenNV: 'Phạm Thị Dung', ngaySinh: '1998-01-30', gioiTinh: 'Nữ', soDienThoai: '0934567890', diaChi: '12 Hai Bà Trưng, Q.3, TP.HCM', anh: '', trangThai: 'Đang làm việc'});
-CREATE (nv5:NhanVien {maNV: 'NV005', tenNV: 'Võ Minh Tuấn', ngaySinh: '1990-05-20', gioiTinh: 'Nam', soDienThoai: '0945678901', diaChi: '56 Cách Mạng Tháng 8, Q.10, TP.HCM', anh: '', trangThai: 'Đang làm việc'});
+CREATE (nv1:NhanVien {maNV: 'NV001', tenNV: 'Nguyễn Văn An', ngaySinh: '1985-03-15', gioiTinh: 'Nam', soDienThoai: '0901234567', diaChi: '123 Nguyễn Trãi, Q.5, TP.HCM', anh: 'img/anhnhanvien/nam2.jpg', trangThai: 'Đang làm việc'});
+CREATE (nv2:NhanVien {maNV: 'NV002', tenNV: 'Trần Thị Bình', ngaySinh: '1995-07-22', gioiTinh: 'Nữ', soDienThoai: '0912345678', diaChi: '45 Lê Lợi, Q.1, TP.HCM', anh: 'img/anhnhanvien/nu1.jpg', trangThai: 'Đang làm việc'});
+CREATE (nv3:NhanVien {maNV: 'NV003', tenNV: 'Lê Hoàng Cường', ngaySinh: '1992-11-08', gioiTinh: 'Nam', soDienThoai: '0923456789', diaChi: '78 Trần Hưng Đạo, Q.5, TP.HCM', anh: 'img/anhnhanvien/nam3.jpg', trangThai: 'Đang làm việc'});
+CREATE (nv4:NhanVien {maNV: 'NV004', tenNV: 'Phạm Thị Dung', ngaySinh: '1998-01-30', gioiTinh: 'Nữ', soDienThoai: '0934567890', diaChi: '12 Hai Bà Trưng, Q.3, TP.HCM', anh: 'img/anhnhanvien/nu2.jpg', trangThai: 'Đang làm việc'});
+CREATE (nv5:NhanVien {maNV: 'NV005', tenNV: 'Võ Minh Tuấn', ngaySinh: '1990-05-20', gioiTinh: 'Nam', soDienThoai: '0945678901', diaChi: '56 Cách Mạng Tháng 8, Q.10, TP.HCM', anh: 'img/anhnhanvien/nam4.jpg', trangThai: 'Đang làm việc'});
 
 // Tạo relationships NhanVien -> ChucVu
 MATCH (nv:NhanVien {maNV: 'NV001'}), (cv:ChucVu {maChucVu: 'CV001'}) CREATE (nv)-[:CO_CHUC_VU]->(cv);

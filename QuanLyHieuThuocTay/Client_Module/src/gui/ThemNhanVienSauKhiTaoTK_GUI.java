@@ -295,7 +295,7 @@ public class ThemNhanVienSauKhiTaoTK_GUI extends JDialog {
             nvMoi.setAnh(anh);
             nvMoi.setTaiKhoan(this.taiKhoanMoi); // Gán tài khoản đã lưu
             nvMoi.setChucVu(chucVuNV);
-            nvMoi.setTrangThai("Còn làm việc"); // Gán mặc định khi tạo mới
+            nvMoi.setTrangThai("Đang làm việc"); // Gán mặc định khi tạo mới
 
             // 4. Gọi DAO để thêm nhân viên
             boolean themNVThanhCong = (boolean) SocketClient.sendRequest(new Request(ActionType.ADD_NHAN_VIEN, nvMoi)).getData();

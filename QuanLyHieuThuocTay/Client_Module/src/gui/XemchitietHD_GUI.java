@@ -367,7 +367,7 @@ public class XemchitietHD_GUI extends JDialog {
         // 3. Lấy và hiển thị Chi Tiết Hóa Đơn
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
-        ArrayList<ChiTietHoaDon> dsCTHD = (ArrayList<ChiTietHoaDon>) SocketClient.sendRequest(new Request(ActionType.GET_DS_THUOC_BY_HOA_DON, maHD)).getData();
+        ArrayList<ChiTietHoaDon> dsCTHD = (ArrayList<ChiTietHoaDon>) SocketClient.sendRequest(new Request(ActionType.GET_DETAILS_BY_HOA_DON, maHD)).getData();
         
         // === LƯU DỮ LIỆU VÀO BIẾN TẠM (REQ 2) ===
         this.dsCTHDHienTai = dsCTHD;
