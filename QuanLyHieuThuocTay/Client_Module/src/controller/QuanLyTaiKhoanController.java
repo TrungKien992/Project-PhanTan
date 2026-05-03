@@ -94,6 +94,9 @@ public class QuanLyTaiKhoanController {
                      
                      if (nvDialog.isSuccess()) {
                          loadData();
+                         if (trangChu != null) {
+                             trangChu.refreshNhanVienTable();
+                         }
                          JOptionPane.showMessageDialog(view, "Thêm thành công!");
                      } else {
                          SocketClient.sendRequest(new Request(ActionType.DELETE_TAI_KHOAN, tkMoi.getMaTK()));

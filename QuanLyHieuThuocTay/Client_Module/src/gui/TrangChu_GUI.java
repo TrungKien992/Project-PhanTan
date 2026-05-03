@@ -130,6 +130,7 @@ public class TrangChu_GUI extends JFrame {
     public JTextField txt_cnkh_dc;
     public JComboBox<String> cb_kh_TrangThai;
     public JComboBox<String> cb_cnkh_TrangThai;
+    public JComboBox<String> cboTrangThai_CNNV;
     public JTable table_ThemNCC;
     public JTextField txtMaNCC_CNNCC;
     public JTextField txtTenNCC_CNNCC;
@@ -4187,6 +4188,18 @@ public class TrangChu_GUI extends JFrame {
 	        cboTaiKhoan_CNNV.setFont(FONT_TEXT_FIELD);
 	        cboTaiKhoan_CNNV.setBounds(814, 174, 453, 33);
 	        pnlInfo_CNNV.add(cboTaiKhoan_CNNV);
+
+	        JLabel lblTrangThai_CNNV = new JLabel("Trạng thái:");
+	        lblTrangThai_CNNV.setFont(FONT_LABEL_BOLD);
+	        lblTrangThai_CNNV.setForeground(COLOR_TEXT_DARK);
+	        lblTrangThai_CNNV.setBounds(labelX_cnnv, startY_cnnv + 4*(height_cnnv + vGap_cnnv), 130, height_cnnv);
+	        pnlInfo_CNNV.add(lblTrangThai_CNNV);
+
+	        cboTrangThai_CNNV = new JComboBox<String>();
+	        cboTrangThai_CNNV.setModel(new DefaultComboBoxModel<String>(new String[] {"Đang làm việc", "Đã nghỉ việc"}));
+	        cboTrangThai_CNNV.setFont(FONT_TEXT_FIELD);
+	        cboTrangThai_CNNV.setBounds(170, startY_cnnv + 4*(height_cnnv + vGap_cnnv), 504, 33);
+	        pnlInfo_CNNV.add(cboTrangThai_CNNV);
 	
 	        List<ChucVu> dsChucVu_CNNV = (List<ChucVu>) SocketClient.sendRequest(new Request(ActionType.GET_ALL_CHUC_VU, null)).getData();
 	        for (ChucVu cv : dsChucVu_CNNV) {
@@ -4635,6 +4648,7 @@ public class TrangChu_GUI extends JFrame {
 
 	                    nv.setDiaChi(tinh + ", " + huyen);
 	                    nv.setAnh(anh);
+	                    nv.setTrangThai(cboTrangThai_CNNV.getSelectedItem().toString());
 
 	                    // ===== CẬP NHẬT DATABASE =====
 	                    // nvDAO đã khởi tạo ở trên rồi, dùng luôn
@@ -4700,6 +4714,7 @@ public class TrangChu_GUI extends JFrame {
 	                    String diaChi = table_CNNV.getValueAt(selectedRow, 6) != null ? table_CNNV.getValueAt(selectedRow, 6).toString() : "";
 	                    String duongDanAnh = table_CNNV.getValueAt(selectedRow, 7) != null ? table_CNNV.getValueAt(selectedRow, 7).toString() : null;
 	                    String taiKhoanStr = table_CNNV.getValueAt(selectedRow, 8).toString();
+	                    String trangThai = table_CNNV.getValueAt(selectedRow, 9) != null ? table_CNNV.getValueAt(selectedRow, 9).toString() : "Đang làm việc";
 	
 	                    txtMaNV_CNNV.setText(maNV);
 	                    txtTenNV_CNNV.setText(tenNV);
@@ -4739,6 +4754,8 @@ public class TrangChu_GUI extends JFrame {
 	                            break;
 	                        }
 	                    }
+	                    
+	                    cboTrangThai_CNNV.setSelectedItem(trangThai);
 	
                     if (diaChi != null && diaChi.contains(",")) {
                         String[] parts = diaChi.split(",", 2);
@@ -7599,6 +7616,12 @@ public class TrangChu_GUI extends JFrame {
         if (table_CNNV != null) {
             loadDataToTableNV(table_CNNV);
         }
+        if (table_TKNV != null) {
+            loadDataToTableNV(table_TKNV);
+        }
+        if (table_TNV != null) {
+            loadDataToTableNV(table_TNV);
+        }
     }
     
     private void loadDataToTableNV(JTable table) {
@@ -7703,7 +7726,7 @@ public class TrangChu_GUI extends JFrame {
                     nv.getDiaChi(),
                     nv.getAnh(),
                     nv.getTaiKhoan() != null ? nv.getTaiKhoan().getTenTK() : "",
-                    nv.getTrangThai()
+                    nv.getTrangThai() != null ? nv.getTrangThai() : "Đang làm việc"
                 });
             }
         }
@@ -7918,24 +7941,35 @@ public class TrangChu_GUI extends JFrame {
     }
     
     private ImageIcon loadIcon(String path) {
-        // Chuẩn hóa đường dẫn: bỏ dấu gạch chéo đầu, thêm img/ nếu thiếu
+        if (path == null || path.trim().isEmpty()) return null;
+        
+        // Chuẩn hóa đường dẫn: bỏ dấu gạch chéo đầu, đảm bảo có img/
+        String originalPath = path;
         if (path.startsWith("/")) path = path.substring(1);
         if (!path.startsWith("img/")) path = "img/" + path;
         
         try {
+            // 1. Thử load từ file trực tiếp (Working Directory)
             java.io.File file = new java.io.File(path);
             if (file.exists()) {
                 return new ImageIcon(path);
-            } else {
-                // Thử trường hợp chạy từ jar hoặc classpath khác
-                java.net.URL imgURL = getClass().getResource("/" + path);
-                if (imgURL != null) return new ImageIcon(imgURL);
-                
-                System.err.println("Không tìm thấy icon tại: " + path);
-                return null;
             }
+            
+            // 2. Thử load từ classpath (cho JAR hoặc IDE)
+            java.net.URL imgURL = getClass().getResource("/" + path);
+            if (imgURL != null) return new ImageIcon(imgURL);
+            
+            // 3. Thử load từ thư mục cha (nếu chạy từ bin hoặc module con)
+            java.io.File parentFile = new java.io.File("../" + path);
+            if (parentFile.exists()) {
+                return new ImageIcon("../" + path);
+            }
+
+            // Nếu vẫn không thấy, in log để debug nhưng trả về null im lặng để tránh spam popup
+            System.err.println("Cảnh báo: Không tìm thấy icon tại: " + path + " (CWD: " + System.getProperty("user.dir") + ")");
+            return null;
         } catch (Exception e) {
-            System.err.println("Lỗi khi load icon: " + path + " - " + e.getMessage());
+            System.err.println("Lỗi nghiêm trọng khi load icon " + path + ": " + e.getMessage());
             return null;
         }
     }

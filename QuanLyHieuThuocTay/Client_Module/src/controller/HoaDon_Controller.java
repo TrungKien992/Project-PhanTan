@@ -387,7 +387,7 @@ public class HoaDon_Controller {
             view.lbl_Hientenkh.setText(kh.getTenKH());
             this.currentKhachHang = kh;
         } else { 
-            List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{"", "", sdt, ""})).getData(); 
+            List<KhachHang> dsKH = (List<KhachHang>) SocketClient.sendRequest(new Request(ActionType.SEARCH_KHACH_HANG, new Object[]{"", "", sdt, "", null})).getData(); 
             KhachHang foundActive = null;
             if (dsKH != null) {
                 for (KhachHang k : dsKH) {

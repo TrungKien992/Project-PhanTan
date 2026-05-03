@@ -161,7 +161,7 @@ public class nhanVien_DAO {
         nv.setSoDienThoai(nodeNV.get("soDienThoai").asString());
         nv.setDiaChi(nodeNV.get("diaChi").asString());
         nv.setAnh(nodeNV.get("anh").isNull() ? null : nodeNV.get("anh").asString());
-        nv.setTrangThai(nodeNV.get("trangThai").asString());
+        nv.setTrangThai(nodeNV.get("trangThai").isNull() ? "Đang làm việc" : nodeNV.get("trangThai").asString());
 
         if (!record.get("cv").isNull()) {
             ChucVu cv = new ChucVu();

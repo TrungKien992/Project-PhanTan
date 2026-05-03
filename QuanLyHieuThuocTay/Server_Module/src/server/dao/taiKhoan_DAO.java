@@ -67,8 +67,12 @@ public class taiKhoan_DAO {
 
     public boolean update(TaiKhoan tk) {
         try (Session session = driver.session()) {
+            // Cập nhật trạng thái tài khoản và đồng bộ sang nhân viên tương ứng
             String query = "MATCH (tk:TaiKhoan {maTK: $ma}) " +
                            "SET tk.tenTK = $ten, tk.matKhau = $pass, tk.quyenHan = $quyen, tk.trangThai = $tt " +
+                           "WITH tk " +
+                           "OPTIONAL MATCH (nv:NhanVien)-[:CO_TAI_KHOAN]->(tk) " +
+                           "SET nv.trangThai = CASE WHEN $tt = true THEN 'Đang làm việc' ELSE 'Đã nghỉ việc' END " +
                            "RETURN tk";
             Result result = session.run(query, Values.parameters(
                 "ma", tk.getMaTK(),

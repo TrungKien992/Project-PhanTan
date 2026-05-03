@@ -32,6 +32,7 @@ public class phieuCho_DAO {
 
     public boolean addPhieuCho(PhieuChoThanhToan p) {
         try (Session session = driver.session()) {
+            // 1. Tạo Node PhieuCho
             String query = "CREATE (p:PhieuCho {maPhieuCho: $ma, tenKH: $tenKH, sdtKH: $sdt, ngayLap: $ngay, tongTienHang: $tth, thueVAT: $thue, tongCong: $tc}) RETURN p";
             Result result = session.run(query, Values.parameters(
                 "ma", p.getMaPhieuCho(),
@@ -42,7 +43,23 @@ public class phieuCho_DAO {
                 "thue", p.getThueVAT(),
                 "tc", p.getTongCong()
             ));
-            return result.hasNext();
+            
+            if (!result.hasNext()) return false;
+
+            // 2. Tạo các quan hệ HAS_DETAIL tới Thuoc
+            if (p.getDsChiTietPhieuCho() != null) {
+                for (ChiTietPhieuCho ct : p.getDsChiTietPhieuCho()) {
+                    String detailQuery = "MATCH (p:PhieuCho {maPhieuCho: $maP}), (t:Thuoc {maThuoc: $maT}) " +
+                                         "CREATE (p)-[r:HAS_DETAIL {soLuong: $sl, donGia: $dg}]->(t)";
+                    session.run(detailQuery, Values.parameters(
+                        "maP", p.getMaPhieuCho(),
+                        "maT", ct.getThuoc().getMaThuoc(),
+                        "sl", ct.getSoLuong(),
+                        "dg", ct.getDonGia()
+                    ));
+                }
+            }
+            return true;
         }
     }
 

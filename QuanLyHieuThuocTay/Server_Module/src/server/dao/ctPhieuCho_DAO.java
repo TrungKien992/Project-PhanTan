@@ -22,12 +22,14 @@ public class ctPhieuCho_DAO {
         List<ChiTietPhieuCho> ds = new ArrayList<>();
         try (Session session = driver.session()) {
             String query = "MATCH (p:PhieuCho {maPhieuCho: $ma})-[r:HAS_DETAIL]->(t:Thuoc) " +
-                           "RETURN t.maThuoc, r.soLuong, r.donGia";
+                           "RETURN t.maThuoc, t.tenThuoc, r.soLuong, r.donGia";
             Result result = session.run(query, Values.parameters("ma", ma));
             while (result.hasNext()) {
                 Record rec = result.next();
                 ChiTietPhieuCho ct = new ChiTietPhieuCho();
-                ct.setThuoc(new Thuoc(rec.get("t.maThuoc").asString()));
+                Thuoc t = new Thuoc(rec.get("t.maThuoc").asString());
+                t.setTenThuoc(rec.get("t.tenThuoc").asString());
+                ct.setThuoc(t);
                 ct.setSoLuong(rec.get("r.soLuong").asInt());
                 ct.setDonGia(rec.get("r.donGia").asDouble());
                 ds.add(ct);

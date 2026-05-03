@@ -327,6 +327,9 @@ public class KhachHang_Controller implements ActionListener {
                 JOptionPane.showMessageDialog(null, "Cập nhật thành công!");
                 hienThiDanhSachKhachHang();
                 lamMoiForm();
+                if (trangChuGUI.hoaDonController != null) {
+                    trangChuGUI.hoaDonController.loadCustomerPhonesToComboBox();
+                }
             } else {
                 JOptionPane.showMessageDialog(null, "Cập nhật thất bại! Vui lòng thử lại.");
             }
@@ -356,6 +359,9 @@ public class KhachHang_Controller implements ActionListener {
                 JOptionPane.showMessageDialog(null, "Xóa thành công!");
                 hienThiDanhSachKhachHang(); // Cập nhật lại bảng (Khách hàng vừa xóa sẽ biến mất)
                 lamMoiForm(); // Xóa nội dung trên form
+                if (trangChuGUI.hoaDonController != null) {
+                    trangChuGUI.hoaDonController.loadCustomerPhonesToComboBox();
+                }
             } else {
                 JOptionPane.showMessageDialog(null, "Xóa thất bại! Vui lòng thử lại.");
             }

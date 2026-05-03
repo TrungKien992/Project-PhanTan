@@ -6,4 +6,5 @@
 /neo4j_database_part2.cypher
 /server/
 /shared/
+/test/
 /utils/
